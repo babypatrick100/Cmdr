@@ -20,7 +20,7 @@ return function(Cmdr)
 			return
 		end
 
-		Window:AddLine(Window:GetLabel() .. " " .. text, Color3.fromRGB(255, 223, 93))
+		Window:AddLine(Window:GetLabel() .. " " .. text)
 
 		Window:AddLine(Cmdr.Dispatcher:EvaluateAndRun(text, Player, {
 			IsHuman = true,
@@ -154,7 +154,6 @@ return function(Cmdr)
 		AutoComplete:Hide()
 	end
 
-	Window:UpdateLabel()
 	Window:UpdateWindowHeight()
 
 	return {

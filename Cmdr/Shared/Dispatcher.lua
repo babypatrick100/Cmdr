@@ -251,7 +251,7 @@ function Dispatcher:RunHooks(hookName: string, commandContext, ...)
 					-- FIXME: This link will need to be updated when new docs are deployed
 					(RunService:IsServer() and "<Server>" or "<Client>")
 						.. " Commands will not run in-game if no BeforeRun hook is configured. Learn more: https://eryn.io/Cmdr/guide/Hooks.html",
-					Color3.fromRGB(255, 228, 26)
+					self.Cmdr.LineColors.SystemReply
 				)
 				displayedBeforeRunHookWarning = true
 			end

@@ -90,8 +90,20 @@ do
 	Cmdr.Dispatcher = require(Shared.Dispatcher)(Cmdr)
 end
 
-if StarterGui:WaitForChild("Cmdr") and wait() and Player:WaitForChild("PlayerGui"):FindFirstChild("Cmdr") == nil then
-	StarterGui.Cmdr:Clone().Parent = Player.PlayerGui
+do
+	-- Setup Cmdr Gui loading - we need to wait for the client's character to laod
+	-- since `PlayerGui` is guaranteed to be fully loaded when the character is loaded,
+	-- that way we can avoid cloning a duplicate CmdrGui into the `PlayerGui` as it is
+	-- possible that the developers may have a custom Cmdr gui setup in `StarterGui` already!
+	local CmdrStarterGui = StarterGui:WaitForChild("Cmdr")
+
+	if Player.Character == nil then
+		Player.CharacterAdded:Wait()
+	end
+
+	if Player.PlayerGui:FindFirstChild("Cmdr") == nil then
+		CmdrStarterGui:Clone().Parent = Player.PlayerGui
+	end
 end
 
 local Interface = require(script.CmdrInterface)(Cmdr)
@@ -103,16 +115,6 @@ local Interface = require(script.CmdrInterface)(Cmdr)
 ]=]
 function Cmdr:SetActivationKeys(keys: { Enum.KeyCode })
 	self.ActivationKeys = Util.MakeDictionary(keys)
-end
-
---[=[
-	Sets the place name label on the interface. This is useful for a quick way to tell what game you're playing in a universe game.
-
-	@within CmdrClient
-]=]
-function Cmdr:SetPlaceName(name: string)
-	self.PlaceName = name
-	Interface.Window:UpdateLabel()
 end
 
 --[=[
@@ -201,6 +203,47 @@ end
 ]=]
 function Cmdr:HandleEvent(name: string, callback: (...any) -> ())
 	self.Events[name] = callback
+end
+
+--[=[
+	Sets the line colors.
+
+	@within CmdrClient
+]=]
+
+function Cmdr:SetLineColors(colors: { ValidUserText: Color3, InvalidUserText: Color3, System: Color3 })
+	self.LineColors = colors
+end
+
+--[=[
+	Sets the label color.
+
+	@within CmdrClient
+]=]
+
+function Cmdr:SetLabelColor(color: Color3)
+	self.LabelColor = color
+end
+
+--[=[
+	Sets the label text.
+
+	@within CmdrClient
+]=]
+
+function Cmdr:SetLabel(text: string)
+	Interface.Window:SetLabel(text)
+end
+
+if RunService:IsClient() then
+	Cmdr:SetLabelColor(Color3.fromRGB(255, 223, 93))
+	Cmdr:SetLineColors({
+		ValidUserText = Color3.fromRGB(255, 255, 255),
+		InvalidUserText = Color3.fromRGB(255, 73, 73),
+		System = Color3.fromRGB(255, 255, 255),
+		SystemReply = Color3.fromRGB(255, 228, 26),
+	})
+	Cmdr:SetLabel(`{Player.Name}$}`)
 end
 
 -- "Only register when we aren't in studio because don't want to overwrite what the server portion did"

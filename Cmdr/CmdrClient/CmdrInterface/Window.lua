@@ -25,9 +25,10 @@ local Entry = Gui:WaitForChild("Entry")
 Line.Parent = nil
 
 -- Update the text entry label
-function Window:UpdateLabel()
-	Entry.TextLabel.Text =
-		`{Player.Name}{if self.Cmdr.PlaceName and self.Cmdr.PlaceName ~= "" then `@{self.Cmdr.PlaceName}` else ""}$`
+function Window:SetLabel(text: string?)
+	Entry.TextLabel.TextColor3 = self.Cmdr.LabelColor
+	Entry.TextLabel.Text = text
+		or `{Player.Name}{if self.Cmdr.PlaceName and self.Cmdr.PlaceName ~= "" then `@{self.Cmdr.PlaceName}` else ""}$`
 end
 
 -- Get the text entry label
@@ -62,7 +63,7 @@ function Window:AddLine(text, options)
 
 	local line = Line:Clone()
 	line.Text = str
-	line.TextColor3 = options.Color or line.TextColor3
+	line.TextColor3 = options.Color or self.Cmdr.LineColors.System
 	line.RichText = options.RichText or false
 	line.Parent = Gui
 end
@@ -137,13 +138,13 @@ end
 -- Sets whether the command is in a valid state or not.
 -- Cannot submit if in invalid state.
 function Window:SetIsValidInput(isValid, errorText)
-	Entry.TextBox.TextColor3 = isValid and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 73, 73)
+	Entry.TextBox.TextColor3 = isValid and self.Cmdr.LineColors.ValidUserText or self.Cmdr.LineColors.InvalidUserText
 	self.Valid = isValid
 	self._errorText = errorText
 end
 
 function Window:HideInvalidState()
-	Entry.TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Entry.TextBox.TextColor3 = self.Cmdr.LineColors.ValidUserText
 end
 
 -- Event handler for text box focus lost
@@ -164,7 +165,7 @@ function Window:LoseFocus(submit)
 		self:SetEntryText("")
 		self.ProcessEntry(text)
 	elseif submit then
-		self:AddLine(self._errorText, Color3.fromRGB(255, 153, 153))
+		self:AddLine(self._errorText, self.Cmdr.LineColors.InvalidUserText)
 	end
 end
 
