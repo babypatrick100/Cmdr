@@ -235,6 +235,16 @@ function Cmdr:SetLabel(text: string)
 	Interface.Window:SetLabel(text)
 end
 
+--[=[
+	Toggles the cmdr history display.
+
+	@within CmdrClient
+]=]
+
+function Cmdr:ToggleHistoryDisplay(toggle: boolean)
+	self.ToggleHistoryDisplay = toggle 
+end
+
 if RunService:IsClient() then
 	Cmdr:SetLabelColor(Color3.fromRGB(255, 223, 93))
 	Cmdr:SetLineColors({
@@ -244,6 +254,7 @@ if RunService:IsClient() then
 		SystemReply = Color3.fromRGB(255, 228, 26),
 	})
 	Cmdr:SetLabel(`{Player.Name}$}`)
+	Cmdr:ToggleHistoryDisplay(true)
 end
 
 -- "Only register when we aren't in studio because don't want to overwrite what the server portion did"

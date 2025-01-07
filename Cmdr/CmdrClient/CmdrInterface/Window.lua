@@ -47,6 +47,10 @@ end
 
 -- Add a line to the command bar
 function Window:AddLine(text, options)
+	if self.Cmdr.ToggleHistoryDisplay == false then
+		return
+	end
+
 	options = options or {}
 	text = tostring(text)
 
