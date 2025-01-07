@@ -242,7 +242,7 @@ end
 ]=]
 
 function Cmdr:ToggleHistoryDisplay(toggle: boolean)
-	self.ToggleHistoryDisplay = toggle 
+	self.HistoryDisplayToggledOn = toggle 
 end
 
 if RunService:IsClient() then
