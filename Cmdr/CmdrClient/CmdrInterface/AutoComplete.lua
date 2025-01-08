@@ -10,7 +10,7 @@ return function(Cmdr)
 
 	local Util = Cmdr.Util
 
-	local Gui = Player:WaitForChild("PlayerGui"):WaitForChild("Cmdr"):WaitForChild("Autocomplete")
+	local Gui = Player.PlayerGui:WaitForChild("Cmdr"):WaitForChild("Autocomplete")
 	local AutoItem = Gui:WaitForChild("TextButton")
 	local Title = Gui:WaitForChild("Title")
 	local Description = Gui:WaitForChild("Description")

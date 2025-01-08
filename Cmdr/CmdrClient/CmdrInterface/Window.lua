@@ -3,8 +3,11 @@ local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 local TextChatService = game:GetService("TextChatService")
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
 local Player = Players.LocalPlayer
 
+local MASH_TO_ENABLE_TARGET_PRESS_COUNT = 5
 local WINDOW_MAX_HEIGHT = 300
 local MOUSE_TOUCH_ENUM = { Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.Touch }
 
@@ -18,10 +21,9 @@ local Window = {
 	HistoryState = nil,
 }
 
-local Gui = Player:WaitForChild("PlayerGui"):WaitForChild("Cmdr"):WaitForChild("Frame")
-local Line = Gui:WaitForChild("Line")
+local Gui = Player.PlayerGui:WaitForChild("Cmdr"):WaitForChild("Frame")
 local Entry = Gui:WaitForChild("Entry")
-
+local Line = Gui:WaitForChild("Line")
 Line.Parent = nil
 
 -- Update the text entry label
@@ -47,20 +49,21 @@ end
 
 -- Add a line to the command bar
 function Window:AddLine(text, options)
-	if self.Cmdr.HistoryDisplayToggledOn == false then
-		return
-	end
-
-	options = options or {}
 	text = tostring(text)
-
-	if typeof(options) == "Color3" then
-		options = { Color = options }
-	end
 
 	if #text == 0 then
 		Window:UpdateWindowHeight()
 		return
+	end
+
+	if self.Cmdr.DefaultHistoryDisplay == false then
+		return
+	end
+
+	options = options or {}
+
+	if typeof(options) == "Color3" then
+		options = { Color = options }
 	end
 
 	local str = self.Cmdr.Util.EmulateTabstops(text or "nil", 8)
@@ -88,7 +91,10 @@ function Window:SetVisible(visible)
 		TextChatService.ChatInputBarConfiguration.Enabled = false
 
 		Entry.TextBox:CaptureFocus()
-		self:SetEntryText("")
+		-- :CaptureFocus() is going to update the "Text" property so we need to wait here:
+		Entry.TextBox:GetPropertyChangedSignal("Text"):Once(function()
+			self:SetEntryText("")
+		end)
 
 		if self.Cmdr.ActivationUnlocksMouse then
 			self.PreviousMouseBehavior = UserInputService.MouseBehavior
@@ -105,6 +111,7 @@ function Window:SetVisible(visible)
 
 		Entry.TextBox:ReleaseFocus()
 		self.AutoComplete:Hide()
+		self:SetEntryText("")
 
 		if self.PreviousMouseBehavior then
 			UserInputService.MouseBehavior = self.PreviousMouseBehavior
@@ -165,8 +172,7 @@ function Window:LoseFocus(submit)
 	end
 
 	if submit and self.Valid then
-		wait()
-		self:SetEntryText("")
+		self.Cmdr:Hide()
 		self.ProcessEntry(text)
 	elseif submit then
 		self:AddLine(self._errorText, self.Cmdr.LineColors.InvalidUserText)
@@ -205,6 +211,7 @@ end
 
 local lastPressTime = 0
 local pressCount = 0
+
 -- Handles user input when the box is focused
 function Window:BeginInput(input, gameProcessed)
 	if GuiService.MenuIsOpen then
@@ -217,8 +224,8 @@ function Window:BeginInput(input, gameProcessed)
 
 	if self.Cmdr.ActivationKeys[input.KeyCode] then -- Activate the command bar
 		if self.Cmdr.MashToEnable and not self.Cmdr.Enabled then
-			if tick() - lastPressTime < 1 then
-				if pressCount >= 5 then
+			if Workspace:GetServerTimeNow() - lastPressTime < 1 then
+				if pressCount >= MASH_TO_ENABLE_TARGET_PRESS_COUNT then
 					return self.Cmdr:SetEnabled(true)
 				else
 					pressCount = pressCount + 1
@@ -226,15 +233,9 @@ function Window:BeginInput(input, gameProcessed)
 			else
 				pressCount = 1
 			end
-			lastPressTime = tick()
+			lastPressTime = Workspace:GetServerTimeNow()
 		elseif self.Cmdr.Enabled then
 			self:SetVisible(not self:IsVisible())
-			wait()
-			self:SetEntryText("")
-
-			if GuiService.MenuIsOpen then -- Special case for menu getting stuck open (roblox bug)
-				self:Hide()
-			end
 		end
 
 		return
@@ -260,7 +261,7 @@ function Window:BeginInput(input, gameProcessed)
 	elseif input.KeyCode == Enum.KeyCode.Up then -- Auto Complete Up
 		self:SelectVertical(-1)
 	elseif input.KeyCode == Enum.KeyCode.Return then -- Eat new lines
-		wait()
+		task.wait()
 		self:SetEntryText(self:GetEntryText():gsub("\n", ""):gsub("\r", ""))
 	elseif input.KeyCode == Enum.KeyCode.Tab then -- Auto complete
 		local item = self.AutoComplete:GetSelectedItem()
@@ -303,12 +304,12 @@ function Window:BeginInput(input, gameProcessed)
 				newText = replace
 			end
 			-- need to wait a frame so we can eat the \t
-			wait()
+			task.wait()
 			-- Update the text box
 			self:SetEntryText(newText .. (insertSpace and " " or ""))
 		else
 			-- Still need to eat the \t even if there is no auto-complete to show
-			wait()
+			task.wait()
 			self:SetEntryText(self:GetEntryText())
 		end
 	else
@@ -326,14 +327,21 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 Entry.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+	-- Rare edgecase where the textbox still remains focused temporarily even
+	-- though command bar is actually closed.
+	if not Gui.Visible then
+		return
+	end
+
 	Gui.CanvasPosition = Vector2.new(0, Gui.AbsoluteCanvasSize.Y)
 
 	if Entry.TextBox.Text:match("\t") then -- Eat \t
 		Entry.TextBox.Text = Entry.TextBox.Text:gsub("\t", "")
 		return
 	end
+
 	if Window.OnTextChanged then
-		return Window.OnTextChanged(Entry.TextBox.Text)
+		Window.OnTextChanged(Entry.TextBox.Text)
 	end
 end)
 

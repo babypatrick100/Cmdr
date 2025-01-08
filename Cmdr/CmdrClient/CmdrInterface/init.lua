@@ -1,4 +1,4 @@
--- Here be dragons
+--# selene:allow(mixed_table)
 
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
@@ -6,10 +6,10 @@ local Player = Players.LocalPlayer
 return function(Cmdr)
 	local Util = Cmdr.Util
 
-	local Window = require(script:WaitForChild("Window"))
+	local Window = require(script.Window)
 	Window.Cmdr = Cmdr
 
-	local AutoComplete = require(script:WaitForChild("AutoComplete"))(Cmdr)
+	local AutoComplete = require(script.AutoComplete)(Cmdr)
 	Window.AutoComplete = AutoComplete
 
 	-- Sets the Window.ProcessEntry callback so that we can dispatch our commands out
@@ -82,7 +82,7 @@ return function(Cmdr)
 					Window:HideInvalidState()
 				end
 
-				return AutoComplete:Show(acItems, {
+				AutoComplete:Show(acItems, {
 					at = atEnd and #text - #typedText + (text:sub(#text, #text):match("%s") and -1 or 0),
 					prefix = #lastArgument.RawSegments == 1 and lastArgument.Prefix or "",
 					isLast = #command.Arguments == #command.ArgumentDefinitions and #typedText > 0,
@@ -95,6 +95,8 @@ return function(Cmdr)
 					invalid = not valid,
 					isPartial = isPartial,
 				})
+
+				return
 			end
 		elseif commandText and #arguments == 0 then
 			Window:SetIsValidInput(true)
@@ -147,7 +149,8 @@ return function(Cmdr)
 				end
 			end
 
-			return AutoComplete:Show(acItems)
+			AutoComplete:Show(acItems)
+			return
 		end
 
 		Window:SetIsValidInput(false, "Use the help command to see all available commands.")

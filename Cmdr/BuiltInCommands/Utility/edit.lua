@@ -62,7 +62,7 @@ return {
 		textBox.Text = text:gsub(delimeter, "\n")
 		textBox.Parent = screenGui
 
-		screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+		screenGui.Parent = Players.LocalPlayer.PlayerGui
 
 		local thread = coroutine.running()
 

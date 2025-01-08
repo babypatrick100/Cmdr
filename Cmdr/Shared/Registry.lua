@@ -161,6 +161,7 @@ local Registry = {
 	TypeAliases = {},
 	Commands = {},
 	CommandsArray = {},
+	CommandExecutionTextValidator = nil,
 	Cmdr = nil,
 	Hooks = {
 		BeforeRun = {},
@@ -341,7 +342,9 @@ function Registry:RegisterCommand(
 	local commandObject = require(commandScript)
 	assert(
 		typeof(commandObject) == "table",
-		`[Cmdr] Invalid return value from command script "{commandScript.Name}" (CommandDefinition expected, got {typeof(commandObject)})`
+		`[Cmdr] Invalid return value from command script "{commandScript.Name}" (CommandDefinition expected, got {typeof(
+			commandObject
+		)})`
 	)
 
 	if commandServerScript then
@@ -536,6 +539,29 @@ function Registry:GetStore(name: string)
 end
 
 --[=[
+	Sets the given `validator` as a command execution text validator. By default, Cmdr sets up a
+	command execution text validator which looks as follows:
+
+	```lua
+	Cmdr:SetCommandExecutionTextValidator(function(_, text)
+		if #text > 10000 then
+			return "Input too long"
+		end
+
+		return nil
+	end)
+	```
+
+	@within Registry
+]=]
+
+function Registry:SetCommandExecutionTextValidator(validator: (player: Player, text: string, options: any) -> boolean)
+	assert(RunService:IsServer(), "Can only be run on server!")
+	
+	self.CommandExecutionTextValidator = validator
+end
+
+--[=[
 	Calls Registry.FlushAutoExecBuffer at the end of the frame.
 	@private
 	@within Registry
@@ -569,6 +595,5 @@ end
 
 return function(cmdr)
 	Registry.Cmdr = cmdr
-
 	return Registry
 end

@@ -1,15 +1,17 @@
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local Shared = script:WaitForChild("Shared")
-local Util = require(Shared:WaitForChild("Util"))
+
+local Shared = script.Shared
+local Util = require(Shared.Util)
 
 if RunService:IsClient() == false then
 	error(
 		"[Cmdr] Server scripts cannot require the client library. Please require the server library from the server to use Cmdr in your own code."
 	)
 end
+
+local Player = Players.LocalPlayer
 
 --[=[
 	@class CmdrClient
@@ -83,6 +85,8 @@ do
 					return r(self.Dispatcher, ...)
 				end
 			end
+
+			return nil
 		end,
 	})
 
@@ -241,8 +245,8 @@ end
 	@within CmdrClient
 ]=]
 
-function Cmdr:ToggleHistoryDisplay(toggle: boolean)
-	self.HistoryDisplayToggledOn = toggle 
+function Cmdr:ToggleDefaultHistoryDisplay(toggle: boolean)
+	self.DefaultHistoryDisplay = toggle
 end
 
 if RunService:IsClient() then
@@ -254,14 +258,10 @@ if RunService:IsClient() then
 		SystemReply = Color3.fromRGB(255, 228, 26),
 	})
 	Cmdr:SetLabel(`{Player.Name}$}`)
-	Cmdr:ToggleHistoryDisplay(true)
-end
+	Cmdr:ToggleDefaultHistoryDisplay(true)
 
--- "Only register when we aren't in studio because don't want to overwrite what the server portion did"
--- This is legacy code which predates Accurate Play Solo (which is now the only way to test in studio), this code will never run.
-if RunService:IsServer() == false then
-	Cmdr.Registry:RegisterTypesIn(script:WaitForChild("Types"))
-	Cmdr.Registry:RegisterCommandsIn(script:WaitForChild("Commands"))
+	Cmdr.Registry:RegisterTypesIn(script.Types)
+	Cmdr.Registry:RegisterCommandsIn(script.Commands)
 end
 
 -- Hook up event listener

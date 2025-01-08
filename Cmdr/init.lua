@@ -1,5 +1,6 @@
 local RunService = game:GetService("RunService")
-local Util = require(script.Shared:WaitForChild("Util"))
+
+local Util = require(script.Shared.Util)
 
 if RunService:IsServer() == false then
 	error(
@@ -45,11 +46,17 @@ do
 		DefaultCommandsFolder = script.BuiltInCommands,
 	}, {
 		__index = function(self, k)
-			local r = self.Registry[k]
-			if r and type(r) == "function" then
-				return function(_, ...)
-					return r(self.Registry, ...)
-				end
+			local registryMethod = self.Registry[k]
+			if registryMethod == nil then
+				return nil
+			end
+
+			if typeof(registryMethod) ~= "function" then
+				return registryMethod
+			end
+
+			return function(_, ...)
+				return registryMethod(self.Registry, ...)
 			end
 		end,
 	})
@@ -60,10 +67,19 @@ do
 	require(script.Initialize)(Cmdr)
 end
 
--- Handle command invocations from the clients.
-Cmdr.RemoteFunction.OnServerInvoke = function(player, text, options)
+Cmdr:SetCommandExecutionTextValidator(function(_, text)
 	if #text > 10000 then
 		return "Input too long"
+	end
+
+	return nil
+end)
+
+-- Handle command invocations from the clients.
+Cmdr.RemoteFunction.OnServerInvoke = function(player, text, options)
+	local response = Cmdr.CommandExecutionTextValidator(player, text, options)
+	if response ~= nil then
+		return response
 	end
 
 	return Cmdr.Dispatcher:EvaluateAndRun(text, player, options)
